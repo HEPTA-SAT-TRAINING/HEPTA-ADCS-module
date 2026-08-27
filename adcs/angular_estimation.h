@@ -3,44 +3,37 @@
 
 #include <Arduino.h>
 
-#include "../../drv/imu9axis_bno055.h"
+class HeptaSensor;
 
-// Estimates relative Z-axis attitude by fusing gyro integration and magnetic
-// heading. The magnetic heading removes long-term gyro drift while the gyro
-// preserves fast motion.
 class AngularEstimation {
  public:
-  static constexpr float GYRO_FILTER_ALPHA = 0.2f;
-  static constexpr unsigned long MAX_GYRO_INTEGRATION_INTERVAL_MS = 100;
-  static constexpr unsigned long MAG_SAMPLE_INTERVAL_MS = 50;
-  static constexpr float MAG_CORRECTION_GAIN_PER_SEC = 0.5f;
-  static constexpr float MIN_VALID_MAG_FIELD_UT = 10.0f;
-  static constexpr float MAX_VALID_MAG_FIELD_UT = 100.0f;
-  static constexpr float MAX_MAG_INNOVATION_DEG = 45.0f;
-  // A positive body Z rotation makes the measured field rotate in the
-  // opposite direction in body coordinates.
-  static constexpr float MAG_HEADING_SIGN = -1.0f;
+  enum Mode { GYRO_ONLY, MAGNETOMETER_ONLY, FUSED };
+
   void reset(unsigned long now_ms);
-  void update(Bno055 &sensor, unsigned long now_ms,
-              bool apply_magnetic_correction = true);
-  float yaw_deg() const;
-  float yaw_rate_deg_per_sec() const;
-  float magnetic_yaw_deg() const;
-  bool magnetometer_is_valid() const;
-  float error_deg(float target_yaw_deg) const;
+  void set_mode(Mode mode, unsigned long now_ms);
+  void update(HeptaSensor &sensor, unsigned long now_ms);
+  Mode mode() const { return mode_; }
+  const char *mode_name() const;
+  float yaw_deg() const { return yaw_deg_; }
+  float gyro_x() const { return gx_; }
+  float gyro_y() const { return gy_; }
+  float gyro_z() const { return gz_; }
+  float mag_x() const { return mx_; }
+  float mag_y() const { return my_; }
+  float mag_z() const { return mz_; }
 
  private:
-  static float normalize_angle_deg(float angle_deg);
-
-  float yaw_deg_ = 0.0f;
-  float previous_gyro_z_deg_per_sec_ = 0.0f;
-  float magnetic_reference_heading_deg_ = 0.0f;
-  float magnetic_yaw_deg_ = 0.0f;
-  unsigned long previous_sample_ms_ = 0;
-  unsigned long previous_mag_sample_ms_ = 0;
-  bool has_previous_sample_ = false;
-  bool has_magnetic_reference_ = false;
-  bool magnetometer_is_valid_ = false;
+  static float normalize(float angle);
+  void update_magnetic_yaw(bool magnetometer_ok);
+  bool apply_magnetometer_only_mode();
+  void integrate_gyro_yaw(bool gyro_ok, unsigned long dt_ms, float dt_sec);
+  void fuse_magnetic_yaw(float dt_sec);
+  Mode mode_ = FUSED;
+  float yaw_deg_ = 0, magnetic_yaw_deg_ = 0, magnetic_reference_deg_ = 0;
+  float gx_ = 0, gy_ = 0, gz_ = 0, previous_gz_ = 0;
+  float mx_ = 0, my_ = 0, mz_ = 0;
+  unsigned long previous_ms_ = 0;
+  bool has_gyro_ = false, has_magnetic_reference_ = false;
 };
 
-#endif  // ANGULAR_ESTIMATION_H
+#endif
