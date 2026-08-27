@@ -2,31 +2,36 @@
 #define RADIO_COMMANDS_H
 
 #include <Arduino.h>
-#include "../adcs/angular_estimation.h"
 
-class HeptaCom;
-class HeptaEps;
-class HeptaSensor;
-class UnitRollerI2C;
+constexpr float RPM_TO_RAD_PER_SEC = TWO_PI / 60.0f;
+constexpr unsigned long WHEEL_STARTUP_TIMEOUT_MS = 5000;
+constexpr unsigned long WHEEL_RETRY_INTERVAL_MS = 250;
+
 using CommandHandler = void (*)(String command);
 
-void begin_adcs_module(HeptaCom &com, HeptaEps &eps, HeptaSensor &sensor,
-                       UnitRollerI2C &wheel, AngularEstimation &estimation);
 void normalize_command(String &command);
-void execute_estimation_mode_command(AngularEstimation::Mode mode);
-void enable_telemetry();
-void execute_set_wheel_speed_command(const String &speed_text);
-void execute_wheel_stop_command();
+void enable_angular_velocity_output();
+void disable_angular_velocity_output();
+bool ensure_wheel_is_connected();
+void execute_start_command();
+void execute_stop_command();
+void execute_status_command();
+void execute_set_target_angle_command(const String &angle_text);
+void execute_set_kp_command(const String &kp_text);
+void execute_set_kd_command(const String &kd_text);
+void execute_set_estimation_mode_command(const String &mode_text);
 void execute_gyro_bias_calibration_command();
 void execute_gyro_bias_save_command();
 void execute_magnetic_calibration_command();
 void execute_magnetic_calibration_status_command();
 void process_magnetic_calibration(unsigned long now_ms);
-float apply_gyro_bias_correction(float gyro_z_deg_per_sec);
-void apply_magnetic_calibration(float &magnetic_x_ut, float &magnetic_y_ut);
 void send_command_error();
-void receive_radio_commands(CommandHandler command_handler);
-void update_attitude_estimation(unsigned long now_ms);
-void process_telemetry(unsigned long now_ms, unsigned long interval_ms);
 
-#endif
+void receive_radio_commands(CommandHandler command_handler);
+void send_message(const String &message);
+void send_telemetry();
+void process_telemetry(
+    unsigned long now_ms, unsigned long telemetry_interval_ms);
+
+#endif  // RADIO_COMMANDS_H
+
