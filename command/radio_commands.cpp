@@ -104,7 +104,7 @@ void execute_stop_command() {
 
 void execute_set_target_angle_command(const String &text) {
   float value;
-  if (!parse_float(text, value)) { send_message("ERR USAGE t<yaw_deg>"); return; }
+  if (!parse_float(text, value)) { send_message("ERR USAGE aim<yaw_deg>"); return; }
   adcs_control.set_target_angle_deg(value);
   send_message("OK TARGET_YAW " + String(adcs_control.target_angle_deg(), 2) + " deg");
 }
@@ -384,7 +384,7 @@ void process_telemetry(
   }
 }
 
-void send_command_error() { send_message("ERR COMMANDS: est_j, est_m, est_f, t=telemetry, t<yaw_deg>=target, kp, kd, biascal, biassave, magcal, magcal?, a, s, h, v, p"); }
+void send_command_error() { send_message("ERR COMMANDS: est_j, est_m, est_f, t=telemetry, aim<yaw_deg>=target, kp, kd, biascal, biassave, magcal, magcal?, a, s, h, v, p"); }
 static bool is_single_character_command(char c) {
   c = static_cast<char>(tolower(c));
   return c == 'a' || c == 's' || c == 'h' || c == 't' || c == 'v' ||
